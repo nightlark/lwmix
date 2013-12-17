@@ -31,3 +31,5 @@ Debug\*
 *.exe
 *.app
 
+# lwmix specific
+lwmix
