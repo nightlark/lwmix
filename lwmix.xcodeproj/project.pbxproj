@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		B1F7986B18601EF500EDB1A3 /* lwmix.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F7985918601AFF00EDB1A3 /* lwmix.c */; };
 		B1F7986C18601F6400EDB1A3 /* minIni.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F7985B18601AFF00EDB1A3 /* minIni.c */; };
+		B1F798711861065000EDB1A3 /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F798701861065000EDB1A3 /* network.c */; };
+		B1F7987918610B5F00EDB1A3 /* player.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F7987818610B5F00EDB1A3 /* player.c */; };
+		B1F7987C18610DE300EDB1A3 /* common.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F7987B18610DE300EDB1A3 /* common.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +24,13 @@
 		B1F7985B18601AFF00EDB1A3 /* minIni.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = minIni.c; sourceTree = "<group>"; };
 		B1F7985C18601AFF00EDB1A3 /* minIni.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = minIni.h; sourceTree = "<group>"; };
 		B1F7986E1860331D00EDB1A3 /* lwmix */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lwmix; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1F7986F1861063B00EDB1A3 /* network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = network.h; sourceTree = "<group>"; };
+		B1F798701861065000EDB1A3 /* network.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = network.c; sourceTree = "<group>"; };
+		B1F798741861079500EDB1A3 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
+		B1F7987518610B0300EDB1A3 /* player.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = player.h; sourceTree = "<group>"; };
+		B1F7987818610B5F00EDB1A3 /* player.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = player.c; sourceTree = "<group>"; };
+		B1F7987A18610D3D00EDB1A3 /* lwmix.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lwmix.h; sourceTree = "<group>"; };
+		B1F7987B18610DE300EDB1A3 /* common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = common.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +60,13 @@
 				B1F7985718601AFF00EDB1A3 /* fd_send.c */,
 				B1F7985818601AFF00EDB1A3 /* lwmaster.c */,
 				B1F7985918601AFF00EDB1A3 /* lwmix.c */,
+				B1F7986F1861063B00EDB1A3 /* network.h */,
+				B1F798741861079500EDB1A3 /* common.h */,
+				B1F7987B18610DE300EDB1A3 /* common.c */,
+				B1F7987A18610D3D00EDB1A3 /* lwmix.h */,
+				B1F7987518610B0300EDB1A3 /* player.h */,
+				B1F7987818610B5F00EDB1A3 /* player.c */,
+				B1F798701861065000EDB1A3 /* network.c */,
 				B1F7985A18601AFF00EDB1A3 /* minGlue.h */,
 				B1F7985B18601AFF00EDB1A3 /* minIni.c */,
 				B1F7985C18601AFF00EDB1A3 /* minIni.h */,
@@ -106,7 +123,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1F798711861065000EDB1A3 /* network.c in Sources */,
+				B1F7987C18610DE300EDB1A3 /* common.c in Sources */,
 				B1F7986C18601F6400EDB1A3 /* minIni.c in Sources */,
+				B1F7987918610B5F00EDB1A3 /* player.c in Sources */,
 				B1F7986B18601EF500EDB1A3 /* lwmix.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

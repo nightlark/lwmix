@@ -1,7 +1,6 @@
-#include <pthread.h>
 
-// Time - Needed for certain features
-#include <sys/time.h>
+// Threading library
+#include <pthread.h>
 
 // Sockets
 #include <sys/types.h>
@@ -12,28 +11,15 @@
 #include <netinet/ip.h>
 #include <sys/select.h>
 
-// Useful stuff
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
+// lwmix includes
+#include "common.h"
+#include "lwmix.h"
+#include "player.h"
+#include "network.h"
 
-// minIni
-#include "minIni.h"
+int running;
+serv_info server_info;
 
-// WoS Master Server
-#define MASTER_IP "63.197.64.78"
-#define MASTER_PORT "23999"
-
-// Numbers from testing syn-real MIX server
-#define MAX_RAW_INPUT_LENGTH 4096
-#define SMALL_BUFSIZE 4096
-
-#define CONFIG_FILE "lwmix.cfg"
-
-// TODO: break this file into multiple smaller files
 // TODO: replace checkin loop with checkin timer
 // TODO: add players based on when they connect (or disconnect)
 // TODO: handle player sending sernum info
@@ -48,73 +34,6 @@
 // want function to: get master ip and port
 // want function to: handle some signals
 
-typedef struct player {
-	int encoded_ip;
-	int sernum;
-	char * player_info;
-	struct scene_node * scene_dest; // scene to send next packet to
-	int private_dest; // sernum to send next packet to
-	int send_dest; // 0 send to all, 1 send to private, 2 send to scene
-  
-  char inbuf[MAX_RAW_INPUT_LENGTH]; // buffer for input
-  char small_outbuf[SMALL_BUFSIZE]; // output buffer
-  // if any of these turn out to be too small, could use linked list of blocks of buffer space
-  char *output; // points to the current location of output buffer
-  int bufptr; // points to end of current output buffer
-  int bufspace; // space remaining in the output buffer
-	int socket;
-} player;
-
-typedef struct serv_info {
-	char name[32];
-	char port[16];
-	int player_count;
-	struct player_node * player_list; // head of the list of all players in the server
-    struct player_node * end_player_list; // pointer to the end of the player list
-  struct scene_node * scene_list; // list of all the scenes on the server
-	char server_rules[128];
-	int id;
-	int public;
-	char * master_ip;
-	char * master_port;
-	int version_int;
-	float version_num;
-	int game_id;
-	char game[5];
-	char host[256];
-	char info[128];
-	char world[64];
-	// anything for limited player online stat tracking?
-} serv_info;
-
-// Used for lists of players
-typedef struct player_node {
-	struct player *player;
-	struct player_node *next;
-} player_node;
-
-// Used for list of rooms created by players, and who is in them; used for mass sending a packet to a subset of the players
-typedef struct scene_node {
-	int scene_id;
-	struct player_node *player_list;
-	struct scene_node *next;
-} scene_node;
-
-int running;
-serv_info server_info;
-
-// Player related utility functions
-player* createPlayer(int);
-void addPlayer(player*);
-void removePlayer(int);
-
-// General server utility functions
-int generateServerID();
-
-// Networking helper functions
-int createDGRAMSocket(char * addr, char * port, int is_server);
-int createTCPSocket(char * addr, char * port, int is_server);
-
 // Threads for different server functions that happen in parallel
 void *masterCheckInTimer(void *serv_config);
 void *serverInfoProvider(void *serv_config);
@@ -122,38 +41,9 @@ void *serverLoop(void *serv_config);
 
 int main (int argc, char *argv[])
 {
-	// read command line args
-	// read config file to set up server defaults
-	// if no config file found, interactive setup wizard
+	// read command line args for special instructions
+    loadLWMIXConfig(CONFIG_FILE);
 	
-	FILE* test_config;
-	if ((test_config = fopen(CONFIG_FILE, "r")) == 0) {
-		// Run new server admin through setup process
-		ini_puts("server", "name", "lwMIX", CONFIG_FILE);
-		ini_puts("server", "port", "8888", CONFIG_FILE);
-		ini_puts("server", "server_rules", "", CONFIG_FILE);
-		ini_putl("server", "id", generateServerID(), CONFIG_FILE);
-		ini_putl("server", "game_id", 0, CONFIG_FILE);
-		ini_puts("server", "game_name", "WoS", CONFIG_FILE);
-		ini_puts("server", "game", "WoS", CONFIG_FILE);
-		ini_puts("server", "info", "", CONFIG_FILE);
-		ini_puts("server", "world", "", CONFIG_FILE);
-		ini_puts("server", "public", "0", CONFIG_FILE);
-	}
-	
-	// Load config information from file
-	ini_gets("server", "name", "lwMIX", server_info.name, sizeof(server_info.name), CONFIG_FILE);
-	ini_gets("server", "port", "8888", server_info.port, sizeof(server_info.port), CONFIG_FILE);
-	ini_gets("server", "server_rules", "", server_info.server_rules, sizeof(server_info.server_rules), CONFIG_FILE);
-	server_info.id = (int) ini_getl("server", "id", generateServerID(), CONFIG_FILE);
-	server_info.game_id = (int) ini_getl("server", "game_id", 0, CONFIG_FILE);
-	ini_gets("server", "game_name", "WoS", server_info.game, sizeof(server_info.game), CONFIG_FILE);
-	ini_gets("server", "game", "WoS", server_info.game, sizeof(server_info.game), CONFIG_FILE);
-	ini_gets("server", "info", "", server_info.info, sizeof(server_info.info), CONFIG_FILE);
-	ini_gets("server", "world", "", server_info.world, sizeof(server_info.world), CONFIG_FILE);
-	server_info.public = ini_getbool("server", "public", 0, CONFIG_FILE);
-	
-    
     // Initialize some basic info on this server
 	server_info.master_ip = MASTER_IP;
 	server_info.master_port = MASTER_PORT;
@@ -464,226 +354,4 @@ void *serverLoop(void *serv_config)
 	printf ("Server stopped \n");
     
     return NULL;
-}
-
-// Create a new struct for a player and fill out their info
-player* createPlayer(int sernum)
-{
-    player* new = malloc(sizeof(player));
-    new->sernum = sernum;
-    return new;
-}
-
-// Add a player to the list of players
-void addPlayer(player* p)
-{
-    // Create a node for the player
-    if (server_info.player_count == 0)
-    {
-        // Create a new list head for the first player
-        server_info.player_list = malloc(sizeof(player_node));
-        
-        // Set the pointer to the last player in the list
-        server_info.end_player_list = server_info.player_list;
-    }
-    else
-    {
-        // Create space for the new player at the end of the player list
-        server_info.end_player_list->next = malloc(sizeof(player_node));
-        
-        // Set the pointer to the end of the player list
-        server_info.end_player_list = server_info.end_player_list->next;
-    }
-    
-    // Set the player data for this list entry
-    server_info.end_player_list->player = p;
-    
-    // Set next entry to NULL (otherwise bad stuff can happen)
-    server_info.end_player_list->next = NULL;
-    
-    // Increase player count by 1
-    server_info.player_count++;
-}
-
-// Remove a player from the list of players based on sernum
-void removePlayer(int sernum)
-{
-    player_node* prev_player = NULL;
-    player_node* it_player = server_info.player_list;
-    player* found_player = NULL;
-    
-    // Base case: no players
-    if (it_player == NULL)
-    {
-        return;
-    }
-    
-    // Otherwise, start searching names until we reach the end of the list, or the player is found
-    while (it_player != NULL && found_player == NULL)
-    {
-        if (sernum == it_player->player->sernum)
-        {
-            // Yipee! We found our player.
-            found_player = it_player->player;
-        }
-        else
-        {
-            // Not the right player, move on to the next one
-            prev_player = it_player;
-            it_player = it_player->next;
-        }
-    }
-    
-    // If the player was found, remove them from the player list
-    if (found_player)
-    {
-        // If the player we are removing is the head of the list, there is no previous player
-        if (prev_player == NULL)
-        {
-            // Update list head to skip first player
-            server_info.player_list = server_info.player_list->next;
-            
-            // If there are no other players, destroy the head
-            if (server_info.player_list == NULL)
-            {
-                free(server_info.player_list);
-            }
-        }
-        else
-        {
-            // Skip over the player we are removing in the list
-            prev_player->next = it_player->next;
-        }
-        
-        // Free the player_node and player data
-        free(it_player);
-        free(found_player);
-        
-        // Decrease the player count
-        server_info.player_count--;
-    }
-}
-
-// Generates an ID for the server
-int generateServerID()
-{
-	srand((unsigned int) time(NULL));
-	int id = rand();
-	id = id << 4;
-	id = id ^ rand();
-	id = id << 4;
-	id = id ^ (rand() << 10);
-	id = id ^ rand();
-	id = id << 4;
-	id = id ^ (rand() << 10);
-	id = id ^ rand();
-	return id;
-}
-
-// may be good to write function to create sockets for you.. create socket(ip, port, type)
-// may also be good to write function to process partial incoming packets
-// may also be good to process outgoing packets
-
-int createTCPSocket(char * addr, char * port, int is_server) {
-	struct addrinfo hints, *res, *p;
-	int status;
-	int sockfd;
-	int yes = 1;
-	
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	
-	if (is_server) {
-		hints.ai_flags = AI_PASSIVE;
-	}
-	
-	if ((status = getaddrinfo(addr, port, &hints, &res)) != 0) {
-		printf("getaddrinfo: %s\n", gai_strerror(status));
-		return -1;
-	}
-	
-	for(p = res; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
-							 p->ai_protocol)) == -1) {
-            perror("unable to get a socket\n");
-            continue;
-        }
-		
-        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-            perror("unable to set socket options\n");
-            exit(1);
-        }
-		
-        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sockfd);
-            perror("bind fail\n");
-            continue;
-        }
-		
-        break;
-    }
-	
-	if (p == NULL) {
-		printf("no addresses found\n");
-		freeaddrinfo(res);
-		return -1;
-	}
-	
-	freeaddrinfo(res);
-	
-	return sockfd;
-}
-
-int createDGRAMSocket(char * addr, char * port, int is_server) {
-	struct addrinfo hints, *res, *p;
-	int status;
-	int sockfd;
-	
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET; // We only want IPv4; I doubt the games this is for even support IPv6
-	hints.ai_socktype = SOCK_DGRAM;
-	if (is_server) {
-		hints.ai_flags = AI_PASSIVE;	
-	}
-	
-	if ((status = getaddrinfo(addr, port, &hints, &res)) != 0) {
-		printf("getaddrinfo: %s\n", gai_strerror(status));
-		return -1;
-	}
-	
-	for(p = res; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-			printf("unable to get socket descriptor\n");
-            continue;
-        }
-		
-		if (is_server) {
-			if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-				close(sockfd);
-				printf("unable to bind socket\n");
-				continue;
-			}
-		}
-		
-		if (!is_server) {
-			if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-				close(sockfd);
-				printf("unable to connect\n");
-				continue;
-			}
-		}
-		
-        break;
-    }
-	
-	if (p == NULL) {
-		printf("no addresses found\n");
-		freeaddrinfo(res);
-		return -1;
-	}
-	
-	freeaddrinfo(res);
-    
-	return sockfd;
 }
