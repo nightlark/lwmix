@@ -99,9 +99,9 @@ typedef struct scene_node {
 int generateServerID();
 int createDGRAMSocket(char * addr, char * port, int is_server);
 int createTCPSocket(char * addr, char * port, int is_server);
-void *masterCheckInTimer(void *serv_config);
-void *serverInfoProvider(void *serv_config);
-void *serverLoop(void *serv_config);
+void masterCheckInTimer(void *serv_config);
+void serverInfoProvider(void *serv_config);
+void serverLoop(void *serv_config);
 
 int main (int argc, char *argv[])
 {
@@ -110,14 +110,6 @@ int main (int argc, char *argv[])
 	// if no config file found, interactive setup wizard
 	
 	serv_info server_info;
-	/*server_info.name = "Catch 22";
-	server_info.port = "4950";
-	server_info.server_rules = "Free For All!!!!";
-	server_info.id = generateServerID();
-	server_info.game_id = 0;
-	server_info.game = "WoS";
-	server_info.info = "";
-	server_info.world = "Evergreen";*/
 	
 	int test_config;
 	if ((test_config = fopen(CONFIG_FILE, "r")) == 0) {
@@ -145,16 +137,6 @@ int main (int argc, char *argv[])
 	ini_gets("server", "info", "", server_info.info, sizeof(server_info.info), CONFIG_FILE);
 	ini_gets("server", "world", "", server_info.world, sizeof(server_info.world), CONFIG_FILE);
 	server_info.public = ini_getbool("server", "public", 1, CONFIG_FILE);
-	
-	/*printf("---------\n%s\n", server_info.name);
-	printf("%s\n", server_info.port);
-	printf("%s\n", server_info.server_rules);
-	printf("%X\n", server_info.id);
-	printf("%s\n", server_info.game);
-	printf("%d\n---------\n", server_info.public);*/
-	
-	/*server_info.public = 1;
-	server_info.server_rules = "HELP US!";*/
 	
 	server_info.master_ip = MASTER_IP;
 	server_info.master_port = MASTER_PORT;
@@ -200,7 +182,7 @@ int main (int argc, char *argv[])
 	// exit
 }
 
-void *masterCheckInTimer(void *serv_config)
+void masterCheckInTimer(void *serv_config)
 {
 	// code to checkin with the master periodically
 	serv_info *server_info;
@@ -251,7 +233,7 @@ void *masterCheckInTimer(void *serv_config)
 	}
 }
 
-void *serverInfoProvider(void *serv_config)
+void serverInfoProvider(void *serv_config)
 {	
 	fd_set master;
 	fd_set read_fds;
@@ -330,7 +312,7 @@ void *serverInfoProvider(void *serv_config)
 }
 
 
-void *serverLoop(void *serv_config)
+void serverLoop(void *serv_config)
 {
 	fd_set master, read_fds;
 	int fdmax;
