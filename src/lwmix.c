@@ -27,14 +27,19 @@
 #define MASTER_IP "63.197.64.78"
 #define MASTER_PORT "23999"
 
+// Numbers from testing syn-real MIX server
 #define MAX_RAW_INPUT_LENGTH 4096
 #define SMALL_BUFSIZE 4096
 
 #define CONFIG_FILE "lwmix.cfg"
 
-// need function to: manipulate SSVs
-// need function to: save and load SSVs
-// need function to: save and load config files
+// TODO: break this file into multiple smaller files
+// TODO: replace checkin loop with checkin timer
+// TODO: add players based on when they connect (or disconnect)
+// TODO: handle player sending sernum info
+// TODO: parse MIX packets directed towards the server
+// TODO: conditional sending of packets
+// need function to: manipulate SSVs -> just use ini files, saving and loading taken care of by minIni
 // need function to: store player information; probably save it to disk as it comes in
 // need function to: encrypt player ip address
 // need function to: generate packets sent from server
