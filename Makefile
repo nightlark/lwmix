@@ -1,17 +1,17 @@
 CC = gcc
-LWMIX = lwmix.c
-MININI = minIni.c
-MININIH = minIni.h
-MINGLUEH = minGlue.h
+SRC = src/
+LWMIX = $(SRC)lwmix.c
+MININI = $(SRC)minIni.c
 
 all: lwmix
 
-lwmix: minIni.o lwmix.o
+lwmix:  minIni.o lwmix.o
 	$(CC) -o $@ minIni.o lwmix.o
+	rm *.o
 
 lwmix.o: $(LWMIX)
 	$(CC) -o $@ -c $(LWMIX)
 
-minIni.o: $(MININIH) $(MINGLUEH) $(MININI)
+minIni.o: $(MININI)
 	$(CC) -o $@ -c $(MININI)
 
