@@ -32,8 +32,6 @@
 
 #define CONFIG_FILE "lwmix.cfg"
 
-int running;
-
 // need function to: manipulate SSVs
 // need function to: save and load SSVs
 // need function to: save and load config files
@@ -66,7 +64,8 @@ typedef struct serv_info {
 	char name[32];
 	char port[16];
 	int player_count;
-	struct player_node * player_list; // list of all players in the server
+	struct player_node * player_list; // head of the list of all players in the server
+    struct player_node * end_player_list; // pointer to the end of the player list
   struct scene_node * scene_list; // list of all the scenes on the server
 	char server_rules[128];
 	int id;
@@ -96,12 +95,25 @@ typedef struct scene_node {
 	struct scene_node *next;
 } scene_node;
 
+int running;
+serv_info server_info;
+
+// Player related utility functions
+player* createPlayer(int);
+void addPlayer(player*);
+void removePlayer(int);
+
+// General server utility functions
 int generateServerID();
+
+// Networking helper functions
 int createDGRAMSocket(char * addr, char * port, int is_server);
 int createTCPSocket(char * addr, char * port, int is_server);
-void masterCheckInTimer(void *serv_config);
-void serverInfoProvider(void *serv_config);
-void serverLoop(void *serv_config);
+
+// Threads for different server functions that happen in parallel
+void *masterCheckInTimer(void *serv_config);
+void *serverInfoProvider(void *serv_config);
+void *serverLoop(void *serv_config);
 
 int main (int argc, char *argv[])
 {
@@ -109,9 +121,7 @@ int main (int argc, char *argv[])
 	// read config file to set up server defaults
 	// if no config file found, interactive setup wizard
 	
-	serv_info server_info;
-	
-	int test_config;
+	FILE* test_config;
 	if ((test_config = fopen(CONFIG_FILE, "r")) == 0) {
 		// Run new server admin through setup process
 		ini_puts("server", "name", "lwMIX", CONFIG_FILE);
@@ -123,7 +133,7 @@ int main (int argc, char *argv[])
 		ini_puts("server", "game", "WoS", CONFIG_FILE);
 		ini_puts("server", "info", "", CONFIG_FILE);
 		ini_puts("server", "world", "", CONFIG_FILE);
-		ini_putl("server", "public", 1, CONFIG_FILE);
+		ini_puts("server", "public", "0", CONFIG_FILE);
 	}
 	
 	// Load config information from file
@@ -136,44 +146,65 @@ int main (int argc, char *argv[])
 	ini_gets("server", "game", "WoS", server_info.game, sizeof(server_info.game), CONFIG_FILE);
 	ini_gets("server", "info", "", server_info.info, sizeof(server_info.info), CONFIG_FILE);
 	ini_gets("server", "world", "", server_info.world, sizeof(server_info.world), CONFIG_FILE);
-	server_info.public = ini_getbool("server", "public", 1, CONFIG_FILE);
+	server_info.public = ini_getbool("server", "public", 0, CONFIG_FILE);
 	
+    
+    // Initialize some basic info on this server
 	server_info.master_ip = MASTER_IP;
 	server_info.master_port = MASTER_PORT;
 	server_info.version_int = 0xA124;
 	server_info.version_num = 1.10;
 	server_info.player_count = 0;
+    server_info.player_list = NULL;
+    
+    // Add some test players to the system
+    addPlayer(createPlayer(0xCA1));
+    addPlayer(createPlayer(0x5F1621B2));
+    addPlayer(createPlayer(0xA59));
+    addPlayer(createPlayer(0xABC));
+    
+    
+    // Getting the system host name
 	gethostname(server_info.host, sizeof(server_info.host));
-	printf("host name: %s\n", server_info.host);
-	server_info.player_list = NULL;
+	printf("Host Name: %s\n", server_info.host);
 	
 	// start threads
 	int rc;
 	running = 1;
 	pthread_t t_serverLoop, t_serverInfo, t_masterCheckIn;
-	rc = pthread_create(&t_serverLoop, NULL, *serverLoop, &server_info);
+    
+	rc = pthread_create(&t_serverLoop, NULL, &serverLoop, NULL);
 	if (rc) {
-		printf("ERROR: return code from pthread_create() is %d\n", rc);
+        perror(NULL);
 		return -1;
-		//exit(-1);
 	}
-	rc = pthread_create(&t_serverInfo, NULL, *serverInfoProvider, &server_info);
+    
+	rc = pthread_create(&t_serverInfo, NULL, &serverInfoProvider, NULL);
 	if (rc) {
-		printf("ERROR: return code from pthread_create() is %d\n", rc);
+		perror(NULL);
+        pthread_join(t_serverLoop, NULL);
 		return -1;
-		//exit(-1);
 	}
-	rc = pthread_create(&t_masterCheckIn, NULL, *masterCheckInTimer, &server_info);
+
+	rc = pthread_create(&t_masterCheckIn, NULL, &masterCheckInTimer, NULL);
 	if (rc) {
-		printf("ERROR: return code from pthread_create() is %d\n", rc);
+		perror(NULL);
+        pthread_join(t_serverLoop, NULL);
+        pthread_join(t_serverInfo, NULL);
 		return -1;
-		//exit(-1);
 	}
+    
 	printf("Started threads\n");
+    
 	char a = 0x0;
 	while(!a) { a = getchar(); };
+    
 	running = 0;
+    pthread_join(t_serverLoop, NULL);
+    pthread_join(t_serverInfo, NULL);
+    pthread_join(t_masterCheckIn, NULL);
 	pthread_exit(NULL);
+    
 	// watch for signals sent to process (via command line or other)
 	// make changes based on signals
 	// write config changes out to file
@@ -182,79 +213,91 @@ int main (int argc, char *argv[])
 	// exit
 }
 
-void masterCheckInTimer(void *serv_config)
+void *masterCheckInTimer(void *arg)
 {
-	// code to checkin with the master periodically
-	serv_info *server_info;
-	server_info = (serv_info*) serv_config;
-	if (server_info->public) {
-		// Create UDP socket
-		int bytes_sent, total_bytes_sent;
-		unsigned char buffer[1024];
-		int len;
-		int i = 0;
-		int master_sock = createDGRAMSocket(server_info->master_ip, server_info->master_port, 0);
-		printf("Master started \n");
-		while (server_info->public){
+	if (server_info.public) {
+		ssize_t bytes_sent;
+		char buffer[1024];
+		ssize_t len;
+        
+        // Create UDP socket for checking in with the master server
+		int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
+        
+		printf("Master check-in timer started \n");
+        
+		while (server_info.public){
 			// Formulate UDP packet
 			// if behind a router, should sent 0 as the port
 			len = snprintf(buffer, sizeof(buffer), "!version=%u,nump=%u,gameid=%u,game=%s,host=%s,id=%X,port=%s,info=%s,name=%s",
-						  server_info->version_int, server_info->player_count, server_info->game_id, server_info->game,
-						  server_info->host, server_info->id, server_info->port, server_info->info, server_info->name);
+						  server_info.version_int, server_info.player_count, server_info.game_id, server_info.game,
+						  server_info.host, server_info.id, server_info.port, server_info.info, server_info.name);
 			len++; // null-character automatically added
 			bytes_sent = 0;
+            
 			// Send UDP packet
 			bytes_sent = send(master_sock, buffer, len, 0);
 			if (bytes_sent < 0) {
 				printf("[ERROR] Could not send CheckIn Packet (%d)\n", errno);
 				
 			}
+            
 			printf("Master CheckIn Sent\n");
 			len = recv(master_sock, buffer, sizeof(buffer), 0);
-			// bytes 4-7 are ip address received by master, in network order
-			// bytes 8-9 are port received at, in little endian form
-			/*for (i = 0; i < 16; i++) {
-				printf("%02X", buffer[i]);
-			}
-			printf("\nlength %u: %s\n", len, buffer);*/
-			// Can get our real ip address from this
-			// Also, if behind a firewall, we might need to use the port number this gives us
+            
+            /* Received packet format:
+             bytes 4-7 are ip address received by master, in network order
+             bytes 8-9 are port received at, in little endian form
+             This can be used to get our real ip address, and also the port number if we are behind a firewall
+             */
 			
 			sleep(300); // Sleep for 5 minutes... might want to replace with something that can be interrupted
 			// maybe use a timer?
 		};
+        
+        // Checkout packet
 		buffer[0] = 0x58;
 		buffer[1] = 0x00;
 		len = 2;
+        
 		send(master_sock, buffer, len, 0);
+        
+        // Close the socket
 		close(master_sock);
-		// Send UDP packet
+        
 		printf("Master stopped \n");
 	}
+    
+    return NULL;
 }
 
-void serverInfoProvider(void *serv_config)
+void *serverInfoProvider(void *arg)
 {	
 	fd_set master;
 	fd_set read_fds;
 	int fdmax;
+    
 	int i;
-	int bytes_sent;
-	int bytes_recv;
+    int characters_written;
+    char player_list_buffer[576];
+    char player_list_size;
+    
+    // Player list iterator
+    player_node *it_player;
+    
+    // Networking related variables
+	ssize_t bytes_sent;
+	ssize_t bytes_recv;
 	struct sockaddr_storage their_addr;
 	socklen_t addr_len = sizeof(their_addr);
-	
-	// provides users information needed to connect
-	serv_info *server_info;
-	server_info = (serv_info*) serv_config;
-	
+	struct sockaddr_in * sin;
+	unsigned char * ip;
+    
 	// Create UDP listener socket
-	int info_sock = createDGRAMSocket(NULL, server_info->port, 1);
+	int info_sock = createDGRAMSocket(NULL, server_info.port, 1);
 	char buffer[1024];
 	int len;
 	int send_response;
-	struct sockaddr_in * sin;
-	unsigned char * ip;
+    
 	
 	FD_SET(info_sock, &master);
 	fdmax = info_sock;
@@ -270,15 +313,40 @@ void serverInfoProvider(void *serv_config)
 				switch (buffer[0]) {
 					case 'P':
 						// Send server info
-						len = snprintf(buffer, sizeof(buffer), "#name=%s [world=%s] //Rules:%s //ID:%X //TM:%X //US:1.1.26",
-									  server_info->name, server_info->world, server_info->server_rules, server_info->id, (unsigned int) time(NULL));
+                        if (strncmp(server_info.world, "", sizeof(server_info.world)))
+                        {
+                            len = snprintf(buffer, sizeof(buffer), "#name=%s [world=%s] //Rules:%s //ID:%X //TM:%X //US:1.1.26",
+                                           server_info.name, server_info.world, server_info.server_rules, server_info.id, (unsigned int) time(NULL));
+                        }
+                        else
+                        {
+                            len = snprintf(buffer, sizeof(buffer), "#name=%s //Rules:%s //ID:%X //TM:%X //US:1.1.26",
+                                           server_info.name, server_info.server_rules, server_info.id, (unsigned int) time(NULL));
+                        }
 						len++;
 						send_response = 1;
 						break;
 					case 'Q':
 						// Send comma separated list of players
 						// QCA1,CD5,C9C,5F1621B2,8E2,9A6,B12,CD4,
-						len = snprintf(buffer, sizeof(buffer), "QCA1,CD5,5F1621B2,");
+                        player_list_size = 0;
+                        characters_written = 0;
+                        player_list_buffer[0] = 0;
+                        it_player = server_info.player_list;
+                        while (it_player != NULL)
+                        {
+                            printf("Sernum: %X\n",it_player->player->sernum);
+                            characters_written = snprintf(player_list_buffer+player_list_size,
+                                     sizeof(player_list_buffer) - player_list_size,
+                                     "%X,",
+                                     it_player->player->sernum);
+                            if (characters_written >= 0)
+                            {
+                                player_list_size += characters_written;
+                            }
+                            it_player = it_player->next;
+                        }
+						len = snprintf(buffer, sizeof(buffer), "Q%s", player_list_buffer);
 						len++;
 						send_response = 1;
 						break;
@@ -306,13 +374,15 @@ void serverInfoProvider(void *serv_config)
 		// Listen for incoming connections/packets
 		// Check if from master server ip
 		// Send proper response
-	};
+	}
 	close(info_sock);
 	printf("Info stopped \n");
+    
+    return NULL;
 }
 
 
-void serverLoop(void *serv_config)
+void *serverLoop(void *serv_config)
 {
 	fd_set master, read_fds;
 	int fdmax;
@@ -320,10 +390,7 @@ void serverLoop(void *serv_config)
 	int newfd;
 	int i, j;
 	char buffer[4096];
-	int recv_bytes, sent_bytes;
-	
-	serv_info *server_info;
-	server_info = (serv_info*) serv_config;
+	ssize_t recv_bytes;
 	
 	struct sockaddr_storage remoteaddr;
 	socklen_t addrlen = sizeof(struct sockaddr_storage);
@@ -331,7 +398,7 @@ void serverLoop(void *serv_config)
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
 	
-	listener = createTCPSocket(NULL, server_info->port, 1);
+	listener = createTCPSocket(NULL, server_info.port, 1);
 	if (listen(listener, 10) == -1) {
 		perror("listen fail\n");
 		exit(-1);
@@ -353,7 +420,7 @@ void serverLoop(void *serv_config)
 					newfd = accept(listener, (struct sockaddr *) &remoteaddr, &addrlen);
 					
 					if (newfd == -1) {
-						perror("accept connection failed\n");
+						perror("Failed to accept connection\n");
 					} else {
 						FD_SET(newfd, &master);
 						if (newfd > fdmax) {
@@ -366,7 +433,7 @@ void serverLoop(void *serv_config)
 						if (recv_bytes == 0) {
 							printf("Disconnected\n");
 						} else {
-							perror("recv error\n");
+							perror("Error receiving packet\n");
 						}
 						close(i);
 						FD_CLR(i, &master);
@@ -390,12 +457,112 @@ void serverLoop(void *serv_config)
 		// Process outgoing packets
 	};
 	printf ("Server stopped \n");
+    
+    return NULL;
 }
 
+// Create a new struct for a player and fill out their info
+player* createPlayer(int sernum)
+{
+    player* new = malloc(sizeof(player));
+    new->sernum = sernum;
+    return new;
+}
 
+// Add a player to the list of players
+void addPlayer(player* p)
+{
+    // Create a node for the player
+    if (server_info.player_count == 0)
+    {
+        // Create a new list head for the first player
+        server_info.player_list = malloc(sizeof(player_node));
+        
+        // Set the pointer to the last player in the list
+        server_info.end_player_list = server_info.player_list;
+    }
+    else
+    {
+        // Create space for the new player at the end of the player list
+        server_info.end_player_list->next = malloc(sizeof(player_node));
+        
+        // Set the pointer to the end of the player list
+        server_info.end_player_list = server_info.end_player_list->next;
+    }
+    
+    // Set the player data for this list entry
+    server_info.end_player_list->player = p;
+    
+    // Set next entry to NULL (otherwise bad stuff can happen)
+    server_info.end_player_list->next = NULL;
+    
+    // Increase player count by 1
+    server_info.player_count++;
+}
+
+// Remove a player from the list of players based on sernum
+void removePlayer(int sernum)
+{
+    player_node* prev_player = NULL;
+    player_node* it_player = server_info.player_list;
+    player* found_player = NULL;
+    
+    // Base case: no players
+    if (it_player == NULL)
+    {
+        return;
+    }
+    
+    // Otherwise, start searching names until we reach the end of the list, or the player is found
+    while (it_player != NULL && found_player == NULL)
+    {
+        if (sernum == it_player->player->sernum)
+        {
+            // Yipee! We found our player.
+            found_player = it_player->player;
+        }
+        else
+        {
+            // Not the right player, move on to the next one
+            prev_player = it_player;
+            it_player = it_player->next;
+        }
+    }
+    
+    // If the player was found, remove them from the player list
+    if (found_player)
+    {
+        // If the player we are removing is the head of the list, there is no previous player
+        if (prev_player == NULL)
+        {
+            // Update list head to skip first player
+            server_info.player_list = server_info.player_list->next;
+            
+            // If there are no other players, destroy the head
+            if (server_info.player_list == NULL)
+            {
+                free(server_info.player_list);
+            }
+        }
+        else
+        {
+            // Skip over the player we are removing in the list
+            prev_player->next = it_player->next;
+        }
+        
+        // Free the player_node and player data
+        free(it_player);
+        free(found_player);
+        
+        // Decrease the player count
+        server_info.player_count--;
+    }
+}
+
+// Generates an ID for the server
 int generateServerID()
 {
-	srand(time(NULL));
+	srand((unsigned int) time(NULL));
 	int id = rand();
 	id = id << 4;
 	id = id ^ rand();
@@ -512,6 +679,6 @@ int createDGRAMSocket(char * addr, char * port, int is_server) {
 	}
 	
 	freeaddrinfo(res);
-	
+    
 	return sockfd;
 }

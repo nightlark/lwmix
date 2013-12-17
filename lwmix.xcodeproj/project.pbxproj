@@ -11,18 +11,6 @@
 		B1F7986C18601F6400EDB1A3 /* minIni.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F7985B18601AFF00EDB1A3 /* minIni.c */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		B1F7985F18601E2700EDB1A3 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
 		B1F7985518601AFF00EDB1A3 /* ancillary.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ancillary.h; sourceTree = "<group>"; };
 		B1F7985618601AFF00EDB1A3 /* fd_recv.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = fd_recv.c; sourceTree = "<group>"; };
@@ -32,7 +20,7 @@
 		B1F7985A18601AFF00EDB1A3 /* minGlue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = minGlue.h; sourceTree = "<group>"; };
 		B1F7985B18601AFF00EDB1A3 /* minIni.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = minIni.c; sourceTree = "<group>"; };
 		B1F7985C18601AFF00EDB1A3 /* minIni.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = minIni.h; sourceTree = "<group>"; };
-		B1F7986D18601FAE00EDB1A3 /* lwmix */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lwmix; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1F7986E1860331D00EDB1A3 /* lwmix */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = lwmix; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,7 +38,7 @@
 			isa = PBXGroup;
 			children = (
 				B1F79853186019A500EDB1A3 /* src */,
-				B1F7986D18601FAE00EDB1A3 /* lwmix */,
+				B1F7986E1860331D00EDB1A3 /* lwmix */,
 			);
 			sourceTree = "<group>";
 		};
@@ -78,7 +66,6 @@
 			buildPhases = (
 				B1F7985D18601E2700EDB1A3 /* Sources */,
 				B1F7985E18601E2700EDB1A3 /* Frameworks */,
-				B1F7985F18601E2700EDB1A3 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -86,7 +73,7 @@
 			);
 			name = lwmix;
 			productName = lwmix;
-			productReference = B1F7986D18601FAE00EDB1A3 /* lwmix */;
+			productReference = B1F7986E1860331D00EDB1A3 /* lwmix */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
