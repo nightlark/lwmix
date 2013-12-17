@@ -27,6 +27,31 @@ Debug\*
 /ipch*
 \ipch*
 
+# XCode files
+*.xccheckout
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.perspective
+*.perspectivev3
+*.xcuserstate
+*.moved-aside
+project.xcworkspace/
+xcuserdata
+build/
+DerivedData/
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# Mac files
+.DS_Store
+.Trashes
+*.lock
+*.swp
+*~.nib
+
 # Executables
 *.exe
 *.app
