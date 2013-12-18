@@ -16,6 +16,7 @@
 #include <sys/select.h>
 
 #include "common.h"
+#include "lwmix.h"
 
 // may be good to write function to create sockets for you.. create socket(ip, port, type)
 // may also be good to write function to process partial incoming packets
@@ -24,5 +25,8 @@
 // Networking helper functions
 int createDGRAMSocket(char * addr, char * port, int is_server);
 int createTCPSocket(char * addr, char * port, int is_server);
+
+void masterCheckIn(int, char*);
+void masterCheckOut(int, char*);
 
 #endif

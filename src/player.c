@@ -7,10 +7,10 @@
 #include "player.h"
 
 // Create a new struct for a player and fill out their info
-player* createPlayer(int sernum)
+player* createPlayer(int socket)
 {
     player* new = malloc(sizeof(player));
-    new->sernum = sernum;
+    new->socket = socket;
     return new;
 }
 
@@ -46,7 +46,7 @@ void addPlayer(player* p)
 }
 
 // Remove a player from the list of players based on sernum
-void removePlayer(int sernum)
+void removePlayer(int socket)
 {
     player_node* prev_player = NULL;
     player_node* it_player = server_info.player_list;
@@ -61,7 +61,7 @@ void removePlayer(int sernum)
     // Otherwise, start searching names until we reach the end of the list, or the player is found
     while (it_player != NULL && found_player == NULL)
     {
-        if (sernum == it_player->player->sernum)
+        if (socket == it_player->player->socket)
         {
             // Yipee! We found our player.
             found_player = it_player->player;

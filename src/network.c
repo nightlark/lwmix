@@ -6,6 +6,50 @@
 
 #include "network.h"
 
+void masterCheckOut(int master_sock, char* buffer)
+{
+    ssize_t len;
+    
+    // Checkout packet
+    buffer[0] = 0x58;
+    buffer[1] = 0x00;
+    len = 2;
+    
+    send(master_sock, buffer, len, 0);
+    
+    printf("Master CheckOut sent \n");
+}
+
+void masterCheckIn(int master_sock, char* buffer)
+{
+    ssize_t bytes_sent;
+    ssize_t len;
+    
+    // Formulate UDP packet
+    // if behind a router, should sent 0 as the port
+    len = snprintf(buffer, sizeof(buffer), "!version=%u,nump=%u,gameid=%u,game=%s,host=%s,id=%X,port=%s,info=%s,name=%s",
+                   server_info.version_int, server_info.player_count, server_info.game_id, server_info.game,
+                   server_info.host, server_info.id, server_info.port, server_info.info, server_info.name);
+    len++; // null-character automatically added
+    bytes_sent = 0;
+    
+    // Send UDP packet
+    bytes_sent = send(master_sock, buffer, len, 0);
+    if (bytes_sent < 0) {
+        printf("[ERROR] Could not send CheckIn Packet (%d)\n", errno);
+        
+    }
+    
+    printf("Master CheckIn Sent\n");
+    len = recv(master_sock, buffer, sizeof(buffer), 0);
+    
+    /* Received packet format:
+     bytes 4-7 are ip address received by master, in network order
+     bytes 8-9 are port received at, in little endian form
+     This can be used to get our real ip address, and also the port number if we are behind a firewall
+     */
+}
+
 int createTCPSocket(char * addr, char * port, int is_server) {
 	struct addrinfo hints, *res, *p;
 	int status;

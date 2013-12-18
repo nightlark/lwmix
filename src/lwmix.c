@@ -21,7 +21,6 @@ int running;
 serv_info server_info;
 
 // TODO: replace checkin loop with checkin timer
-// TODO: add players based on when they connect (or disconnect)
 // TODO: handle player sending sernum info
 // TODO: parse MIX packets directed towards the server
 // TODO: conditional sending of packets
@@ -51,13 +50,6 @@ int main (int argc, char *argv[])
 	server_info.version_num = 1.10;
 	server_info.player_count = 0;
     server_info.player_list = NULL;
-    
-    // Add some test players to the system
-    addPlayer(createPlayer(0xCA1));
-    addPlayer(createPlayer(0x5F1621B2));
-    addPlayer(createPlayer(0xA59));
-    addPlayer(createPlayer(0xABC));
-    
     
     // Getting the system host name
 	gethostname(server_info.host, sizeof(server_info.host));
@@ -110,58 +102,28 @@ int main (int argc, char *argv[])
 
 void *masterCheckInTimer(void *arg)
 {
-	if (server_info.public) {
-		ssize_t bytes_sent;
-		char buffer[1024];
-		ssize_t len;
-        
-        // Create UDP socket for checking in with the master server
-		int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
-        
-		printf("Master check-in timer started \n");
-        
-		while (server_info.public){
-			// Formulate UDP packet
-			// if behind a router, should sent 0 as the port
-			len = snprintf(buffer, sizeof(buffer), "!version=%u,nump=%u,gameid=%u,game=%s,host=%s,id=%X,port=%s,info=%s,name=%s",
-						  server_info.version_int, server_info.player_count, server_info.game_id, server_info.game,
-						  server_info.host, server_info.id, server_info.port, server_info.info, server_info.name);
-			len++; // null-character automatically added
-			bytes_sent = 0;
-            
-			// Send UDP packet
-			bytes_sent = send(master_sock, buffer, len, 0);
-			if (bytes_sent < 0) {
-				printf("[ERROR] Could not send CheckIn Packet (%d)\n", errno);
-				
-			}
-            
-			printf("Master CheckIn Sent\n");
-			len = recv(master_sock, buffer, sizeof(buffer), 0);
-            
-            /* Received packet format:
-             bytes 4-7 are ip address received by master, in network order
-             bytes 8-9 are port received at, in little endian form
-             This can be used to get our real ip address, and also the port number if we are behind a firewall
-             */
+    char buffer[1024];
+    
+    // Create UDP socket for checking in with the master server
+    int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
+    
+    if (server_info.public)
+    {
+        printf("Master check-in timer started \n");
+    }
+    
+    while (running) {
+        if (server_info.public) {
+            masterCheckIn(master_sock, buffer);
 			
 			sleep(300); // Sleep for 5 minutes... might want to replace with something that can be interrupted
 			// maybe use a timer?
-		};
-        
-        // Checkout packet
-		buffer[0] = 0x58;
-		buffer[1] = 0x00;
-		len = 2;
-        
-		send(master_sock, buffer, len, 0);
-        
-        // Close the socket
-		close(master_sock);
-        
-		printf("Master stopped \n");
-	}
-    
+		}
+    }
+
+    // Close the socket
+    close(master_sock);
+
     return NULL;
 }
 
@@ -290,6 +252,8 @@ void *serverLoop(void *serv_config)
 	struct sockaddr_storage remoteaddr;
 	socklen_t addrlen = sizeof(struct sockaddr_storage);
 	
+    player* temp_player;
+    
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
 	
@@ -322,11 +286,15 @@ void *serverLoop(void *serv_config)
 							fdmax = newfd;
 						}
 						printf("New connection\n");
+                        temp_player = createPlayer(newfd);
+                        addPlayer(temp_player);
+                        temp_player->sernum = server_info.player_count*0x123;
 					}
 				} else {
 					if ((recv_bytes = recv(i, buffer, sizeof(buffer), 0)) <= 0) {
 						if (recv_bytes == 0) {
 							printf("Disconnected\n");
+                            removePlayer(i);
 						} else {
 							perror("Error receiving packet\n");
 						}

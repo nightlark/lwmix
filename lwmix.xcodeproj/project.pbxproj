@@ -61,12 +61,12 @@
 				B1F7985818601AFF00EDB1A3 /* lwmaster.c */,
 				B1F7985918601AFF00EDB1A3 /* lwmix.c */,
 				B1F7986F1861063B00EDB1A3 /* network.h */,
+				B1F798701861065000EDB1A3 /* network.c */,
 				B1F798741861079500EDB1A3 /* common.h */,
 				B1F7987B18610DE300EDB1A3 /* common.c */,
 				B1F7987A18610D3D00EDB1A3 /* lwmix.h */,
 				B1F7987518610B0300EDB1A3 /* player.h */,
 				B1F7987818610B5F00EDB1A3 /* player.c */,
-				B1F798701861065000EDB1A3 /* network.c */,
 				B1F7985A18601AFF00EDB1A3 /* minGlue.h */,
 				B1F7985B18601AFF00EDB1A3 /* minIni.c */,
 				B1F7985C18601AFF00EDB1A3 /* minIni.h */,
@@ -235,6 +235,7 @@
 				B1F7986A18601E2700EDB1A3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
