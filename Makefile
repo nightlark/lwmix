@@ -9,7 +9,7 @@ MININI = $(SRC)minIni.c
 all: lwmix
 
 lwmix:  minIni.o common.o player.o network.o lwmix.o
-	$(CC) -o $@ minIni.o common.o player.o network.o lwmix.o
+	$(CC) -o $@ minIni.o common.o player.o network.o lwmix.o -pthread
 	rm *.o
 
 lwmix.o: $(LWMIX)
