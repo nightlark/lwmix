@@ -140,6 +140,8 @@ void *serverInfoProvider(void *arg)
     char player_list_buffer[576];
     char player_list_size;
     
+    char* token;
+    
     // Player list iterator
     player_node *it_player;
     
@@ -168,56 +170,70 @@ void *serverInfoProvider(void *arg)
 			if (FD_ISSET(i, &read_fds)) {
 				bytes_recv = recvfrom(i, buffer, sizeof(buffer), 0, (struct sockaddr *)&their_addr, &addr_len);
 				send_response = 0;
-				
-				switch (buffer[0]) {
-					case 'P':
-						// Send server info
-                        if (strncmp(server_info.world, "", sizeof(server_info.world)))
-                        {
-                            len = snprintf(buffer, sizeof(buffer), "#name=%s [world=%s] //Rules:%s //ID:%X //TM:%X //US:1.1.26",
-                                           server_info.name, server_info.world, server_info.server_rules, server_info.id, (unsigned int) time(NULL));
-                        }
-                        else
-                        {
-                            len = snprintf(buffer, sizeof(buffer), "#name=%s //Rules:%s //ID:%X //TM:%X //US:1.1.26",
-                                           server_info.name, server_info.server_rules, server_info.id, (unsigned int) time(NULL));
-                        }
-						len++;
-						send_response = 1;
-						break;
-					case 'Q':
-						// Send comma separated list of players
-						// QCA1,CD5,C9C,5F1621B2,8E2,9A6,B12,CD4,
-                        player_list_size = 0;
-                        characters_written = 0;
-                        player_list_buffer[0] = 0;
-                        it_player = server_info.player_list;
-                        while (it_player != NULL)
-                        {
-                            printf("Sernum: %X\n",it_player->player->sernum);
-                            characters_written = snprintf(player_list_buffer+player_list_size,
-                                     sizeof(player_list_buffer) - player_list_size,
-                                     "%X,",
-                                     it_player->player->sernum);
-                            if (characters_written >= 0)
+				if (bytes_recv > 1) {
+                    switch (buffer[0]) {
+                        case 'P':
+                            // Ex: Palias=Newb,name=Newbie,email=unknown,loc=unknown,sernum=SOUL 5000,HHMM=13:37,d=00000000,v=00000000,w=00000000
+                            // Extract info from packet
+                            token = strtok(&buffer[1], ",");
+                            while (token != NULL)
                             {
-                                player_list_size += characters_written;
+                                //printf("Requestee Info: %s\n", token);
+                                if (strncmp(token, "sernum=SOUL ", 12) == 0)
+                                {
+                                    printf("Found the sernum: %s\n", &token[7]);
+                                }
+                                token = strtok(NULL, ",");
                             }
-                            it_player = it_player->next;
-                        }
-						len = snprintf(buffer, sizeof(buffer), "Q%s", player_list_buffer);
-						len++;
-						send_response = 1;
-						break;
-					case 'G':
-						// Player is telling us which world they selected
-						send_response = 0;
-						break;
-					default:
-						printf("[ERROR] Unknown Packet Type: %s\n", buffer);
-						send_response = 0;
-						break;
-				}
+                            
+                            // Send server info
+                            if (strncmp(server_info.world, "", sizeof(server_info.world)))
+                            {
+                                len = snprintf(buffer, sizeof(buffer), "#name=%s [world=%s] //Rules:%s //ID:%X //TM:%X //US:1.1.26",
+                                               server_info.name, server_info.world, server_info.server_rules, server_info.id, (unsigned int) time(NULL));
+                            }
+                            else
+                            {
+                                len = snprintf(buffer, sizeof(buffer), "#name=%s //Rules:%s //ID:%X //TM:%X //US:1.1.26",
+                                               server_info.name, server_info.server_rules, server_info.id, (unsigned int) time(NULL));
+                            }
+                            len++;
+                            send_response = 1;
+                            break;
+                        case 'Q':
+                            // Send comma separated list of players
+                            // Ex: QCA1,CD5,C9C,5F1621B2,8E2,9A6,B12,CD4,
+                            player_list_size = 0;
+                            characters_written = 0;
+                            player_list_buffer[0] = 0;
+                            it_player = server_info.player_list;
+                            while (it_player != NULL)
+                            {
+                                printf("Sernum: %X\n",it_player->player->sernum);
+                                characters_written = snprintf(player_list_buffer+player_list_size,
+                                                              sizeof(player_list_buffer) - player_list_size,
+                                                              "%X,",
+                                                              it_player->player->sernum);
+                                if (characters_written >= 0)
+                                {
+                                    player_list_size += characters_written;
+                                }
+                                it_player = it_player->next;
+                            }
+                            len = snprintf(buffer, sizeof(buffer), "Q%s", player_list_buffer);
+                            len++;
+                            send_response = 1;
+                            break;
+                        case 'G':
+                            // Player is telling us which world they selected
+                            send_response = 0;
+                            break;
+                        default:
+                            printf("[ERROR] Unknown Packet Type: %s\n", buffer);
+                            send_response = 0;
+                            break;
+                    }
+                }
 				
 				if (send_response) {
 					sin = (struct sockaddr_in *)&their_addr;

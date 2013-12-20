@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B1D7C33B186506AF00C3387D /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = B1D7C33A186506AF00C3387D /* Makefile */; };
 		B1F7986B18601EF500EDB1A3 /* lwmix.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F7985918601AFF00EDB1A3 /* lwmix.c */; };
 		B1F7986C18601F6400EDB1A3 /* minIni.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F7985B18601AFF00EDB1A3 /* minIni.c */; };
 		B1F798711861065000EDB1A3 /* network.c in Sources */ = {isa = PBXBuildFile; fileRef = B1F798701861065000EDB1A3 /* network.c */; };
@@ -15,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B1D7C33A186506AF00C3387D /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		B1F7985518601AFF00EDB1A3 /* ancillary.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ancillary.h; sourceTree = "<group>"; };
 		B1F7985618601AFF00EDB1A3 /* fd_recv.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = fd_recv.c; sourceTree = "<group>"; };
 		B1F7985718601AFF00EDB1A3 /* fd_send.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = fd_send.c; sourceTree = "<group>"; };
@@ -47,6 +49,7 @@
 		B1F7984B1860192600EDB1A3 = {
 			isa = PBXGroup;
 			children = (
+				B1D7C33A186506AF00C3387D /* Makefile */,
 				B1F79853186019A500EDB1A3 /* src */,
 				B1F7986E1860331D00EDB1A3 /* lwmix */,
 			);
@@ -123,6 +126,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1D7C33B186506AF00C3387D /* Makefile in Sources */,
 				B1F798711861065000EDB1A3 /* network.c in Sources */,
 				B1F7987C18610DE300EDB1A3 /* common.c in Sources */,
 				B1F7986C18601F6400EDB1A3 /* minIni.c in Sources */,
