@@ -24,6 +24,7 @@ serv_info server_info;
 // TODO: server info provider should log sernum of most recent request from each ip address, use it for when they connect
 // TODO: handle player sending sernum info after connecting
 // TODO: parse MIX packets directed towards the server
+// TODO: send MIX packets
 // TODO: conditional sending of packets
 // need function to: manipulate SSVs -> just use ini files, saving and loading taken care of by minIni
 // need function to: store player information; probably save it to disk as it comes in
@@ -302,14 +303,23 @@ void *serverLoop(void *serv_config)
 						close(i);
 						FD_CLR(i, &master);
 					} else {
-						for (j = 0; j <= fdmax; j++) {
-							if (FD_ISSET(j, &master)) {
-								if (j != listener && j != i) {
-									if (send(j, buffer, recv_bytes, 0) == -1) {
-										perror("Send failed\n");
-									}
-								}
-							}
+                        printf("Packet Received: %s\n", buffer);
+                        if (strncmp(buffer, ":MIX", 4) == 0)
+                        {
+                            // Handle packets directed at mix server
+                            printf("Got MIX packet\n");
+                        }
+                        else
+                        {
+                            for (j = 0; j <= fdmax; j++) {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener && j != i) {
+                                        if (send(j, buffer, recv_bytes, 0) == -1) {
+                                            perror("Send failed\n");
+                                        }
+                                    }
+                                }
+                            }
 						}
 					}
 				}
