@@ -29,7 +29,7 @@ void masterCheckIn(int master_sock, char* buffer)
     // if behind a router, should sent 0 as the port
     len = snprintf(buffer, sizeof(buffer), "!version=%u,nump=%u,gameid=%u,game=%s,host=%s,id=%X,port=%s,info=%s,name=%s",
                    server_info.version_int, server_info.player_count, server_info.game_id, server_info.game,
-                   server_info.host, server_info.id, server_info.port, server_info.info, server_info.name);
+                   server_info.host, server_info.id, 0 /*server_info.port*/, server_info.info, server_info.name);
     len++; // null-character automatically added
     bytes_sent = 0;
     
