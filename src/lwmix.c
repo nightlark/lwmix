@@ -21,7 +21,8 @@ int running;
 serv_info server_info;
 
 // TODO: replace checkin loop with checkin timer
-// TODO: handle player sending sernum info
+// TODO: server info provider should log sernum of most recent request from each ip address, use it for when they connect
+// TODO: handle player sending sernum info after connecting
 // TODO: parse MIX packets directed towards the server
 // TODO: conditional sending of packets
 // need function to: manipulate SSVs -> just use ini files, saving and loading taken care of by minIni
