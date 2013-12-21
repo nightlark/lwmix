@@ -193,7 +193,7 @@ void *serverInfoProvider(void *arg)
                             // Send server info
                             if (strncmp(server_info.world, "", sizeof(server_info.world)))
                             {
-                                len = snprintf(buffer, sizeof(buffer), "#name=%s [world=%s] //Rules:%s //ID:%X //TM:%X //US:1.1.26",
+                                len = snprintf(buffer, sizeof(buffer), "#name=%s [world=%s] //Rules: %s //ID:%X //TM:%X //US:1.1.26",
                                                server_info.name, server_info.world, server_info.server_rules, server_info.id, (unsigned int) time(NULL));
                             }
                             else
