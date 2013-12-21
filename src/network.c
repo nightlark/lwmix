@@ -20,14 +20,14 @@ void masterCheckOut(int master_sock, char* buffer)
     printf("Master CheckOut sent \n");
 }
 
-void masterCheckIn(int master_sock, char* buffer)
+void masterCheckIn(int master_sock, char* buffer, unsigned int buffer_size)
 {
     ssize_t bytes_sent;
     ssize_t len;
     
     // Formulate UDP packet
     // if behind a router, should sent 0 as the port
-    len = snprintf(buffer, sizeof(buffer), "!version=%u,nump=%u,gameid=%u,game=%s,host=%s,id=%X,port=%s,info=%s,name=%s",
+    len = snprintf(buffer, buffer_size, "!version=%u,nump=%u,gameid=%u,game=%s,host=%s,id=%X,port=%s,info=%s,name=%s",
                    server_info.version_int, server_info.player_count, server_info.game_id, server_info.game,
                    server_info.host, server_info.id, server_info.port, server_info.info, server_info.name);
     len++; // null-character automatically added

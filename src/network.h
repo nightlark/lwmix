@@ -26,7 +26,7 @@
 int createDGRAMSocket(char * addr, char * port, int is_server);
 int createTCPSocket(char * addr, char * port, int is_server);
 
-void masterCheckIn(int, char*);
+void masterCheckIn(int, char*, unsigned int buffer_size);
 void masterCheckOut(int, char*);
 
 #endif

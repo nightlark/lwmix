@@ -120,7 +120,7 @@ void *masterCheckInTimer(void *arg)
     
     while (running) {
         if (server_info.public) {
-            masterCheckIn(master_sock, buffer);
+            masterCheckIn(master_sock, buffer, sizeof(buffer));
 			
 			sleep(300); // Sleep for 5 minutes... might want to replace with something that can be interrupted
 			// maybe use a timer?
@@ -182,7 +182,7 @@ void *serverInfoProvider(void *arg)
                             token = strtok(&buffer[1], ",");
                             while (token != NULL)
                             {
-                                //printf("Requestee Info: %s\n", token);
+                                printf("Requestee Info: %s\n", token);
                                 if (strncmp(token, "sernum=SOUL ", 12) == 0)
                                 {
                                     printf("Found the sernum: %s\n", &token[7]);
@@ -311,6 +311,9 @@ void *serverLoop(void *serv_config)
                         temp_player = createPlayer(newfd);
                         addPlayer(temp_player);
                         temp_player->sernum = server_info.player_count*0x123;
+                        // TODO: Send SR@I, SR@M packets
+                        // SR@I with all players sent to connecting player
+                        // SR@I with just new player sent to all others
 					}
 				} else {
 					if ((recv_bytes = recv(i, buffer, sizeof(buffer), 0)) <= 0) {
@@ -326,7 +329,7 @@ void *serverLoop(void *serv_config)
                         printf("Packet Received: %s\n", buffer);
                         if (strncmp(buffer, ":MIX", 4) == 0)
                         {
-                            // Handle packets directed at mix server
+                            // TODO: Handle packets directed at mix server
                             printf("Got MIX packet\n");
                         }
                         else
