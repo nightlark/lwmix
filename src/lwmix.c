@@ -19,6 +19,7 @@
 
 int running;
 serv_info server_info;
+int udp_sock = NULL;
 
 // TODO: replace checkin loop with checkin timer
 // TODO: server info provider should log sernum of most recent request from each ip address, use it for when they connect
@@ -108,6 +109,10 @@ void *masterCheckInTimer(void *arg)
     
     // Create UDP socket for checking in with the master server
     int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
+    //int master_sock;
+    
+    //while (udp_sock == NULL);
+    //master_sock = udp_sock;
     
     if (server_info.public)
     {
@@ -158,7 +163,7 @@ void *serverInfoProvider(void *arg)
 	char buffer[1024];
 	int len;
 	int send_response;
-    
+    udp_sock = info_sock;
 	
 	FD_SET(info_sock, &master);
 	fdmax = info_sock;

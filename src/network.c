@@ -29,11 +29,25 @@ void masterCheckIn(int master_sock, char* buffer)
     // if behind a router, should sent 0 as the port
     len = snprintf(buffer, sizeof(buffer), "!version=%u,nump=%u,gameid=%u,game=%s,host=%s,id=%X,port=%s,info=%s,name=%s",
                    server_info.version_int, server_info.player_count, server_info.game_id, server_info.game,
-                   server_info.host, server_info.id, 0 /*server_info.port*/, server_info.info, server_info.name);
+                   server_info.host, server_info.id, server_info.port, server_info.info, server_info.name);
     len++; // null-character automatically added
     bytes_sent = 0;
     
     // Send UDP packet
+    struct addrinfo hints, *res, *p;
+    getaddrinfo("63.197.64.78", "23999", &hints, &res);
+    for (p=res; p!=NULL; p=p->ai_next) {
+        struct in_addr  *addr;
+        if (p->ai_family == AF_INET) {
+            struct sockaddr_in *ipv = (struct sockaddr_in *)p->ai_addr;
+            addr = &(ipv->sin_addr);
+            unsigned char * ip = (unsigned char *)&addr->s_addr;
+            printf("UDP Packet IP: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+        }
+    }
+    struct sockaddr_in sin;
+    //sin.sin_port;
+    //bytes_sent = sendto(master_sock, buffer, len, 0, &sin, sizeof(struct sockaddr_in));
     bytes_sent = send(master_sock, buffer, len, 0);
     if (bytes_sent < 0) {
         printf("[ERROR] Could not send CheckIn Packet (%d)\n", errno);
