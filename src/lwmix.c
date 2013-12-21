@@ -108,11 +108,10 @@ void *masterCheckInTimer(void *arg)
     char buffer[1024];
     
     // Create UDP socket for checking in with the master server
-    int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
-    //int master_sock;
-    
-    //while (udp_sock == NULL);
-    //master_sock = udp_sock;
+    //int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
+    int master_sock;
+    while (udp_sock == NULL);
+    master_sock = udp_sock;
     
     if (server_info.public)
     {

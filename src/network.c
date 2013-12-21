@@ -34,23 +34,26 @@ void masterCheckIn(int master_sock, char* buffer)
     bytes_sent = 0;
     
     // Send UDP packet
-    struct addrinfo hints, *res, *p;
-    if ( -1 != getaddrinfo("63.197.64.78", "23999", NULL, &res)) {
-    for (p=res; p!=NULL; p=p->ai_next) {
-        struct in_addr  *addr;
-        if (p->ai_family == AF_INET) {
-            struct sockaddr_in *ipv = (struct sockaddr_in *)p->ai_addr;
-            addr = &(ipv->sin_addr);
-            unsigned char * ip = (unsigned char *)&addr->s_addr;
-            printf("UDP Packet IP: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+    struct addrinfo *res;
+    int status;
+    if ((status = getaddrinfo(MASTER_IP, MASTER_PORT, NULL, &res)) == 0) {
+        struct addrinfo *p;
+        for (p=res; p!=NULL; p=p->ai_next) {
+            struct in_addr  *addr;
+            if (p->ai_family == AF_INET) {
+                struct sockaddr_in *ipv = (struct sockaddr_in *)p->ai_addr;
+                addr = &(ipv->sin_addr);
+                unsigned char * ip = (unsigned char *)&addr->s_addr;
+                printf("UDP Packet IP: %d.%d.%d.%d\n", ip[0], ip[1], ip[2], ip[3]);
+                struct sockaddr_in * sin = (struct sockaddr_in *)p->ai_addr;
+                bytes_sent = sendto(master_sock, buffer, len, 0, sin, sizeof(struct sockaddr_in));
+                break;
+            }
         }
+    } else {
+        bytes_sent = -1;
     }
-    }
-    struct sockaddr_in sin;
-    //sin.sin_port;
-    //bytes_sent = sendto(master_sock, buffer, len, 0, &sin, sizeof(struct sockaddr_in));
-    //bytes_sent = send(master_sock, buffer, len, 0);
-    bytes_sent = 0;
+    
     if (bytes_sent < 0) {
         printf("[ERROR] Could not send CheckIn Packet (%d)\n", errno);
         
