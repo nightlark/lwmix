@@ -35,7 +35,7 @@ void masterCheckIn(int master_sock, char* buffer)
     
     // Send UDP packet
     struct addrinfo hints, *res, *p;
-    if ( -1 != getaddrinfo("63.197.64.78", "23999", &hints, &res)) {
+    if ( -1 != getaddrinfo("63.197.64.78", "23999", NULL, &res)) {
     for (p=res; p!=NULL; p=p->ai_next) {
         struct in_addr  *addr;
         if (p->ai_family == AF_INET) {
@@ -49,7 +49,8 @@ void masterCheckIn(int master_sock, char* buffer)
     struct sockaddr_in sin;
     //sin.sin_port;
     //bytes_sent = sendto(master_sock, buffer, len, 0, &sin, sizeof(struct sockaddr_in));
-    bytes_sent = send(master_sock, buffer, len, 0);
+    //bytes_sent = send(master_sock, buffer, len, 0);
+    bytes_sent = 0;
     if (bytes_sent < 0) {
         printf("[ERROR] Could not send CheckIn Packet (%d)\n", errno);
         
