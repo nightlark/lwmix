@@ -1,4 +1,3 @@
-
 // Threading library
 #include <pthread.h>
 
@@ -21,6 +20,9 @@ int running;
 serv_info server_info;
 int udp_sock = NULL;
 
+// revert DGRAM socket creation function and the two server loops to original now that checkin packet formed and sent correctly
+// test encrypting ip address of connecting player
+// measure time taken to update player count on server list (update/checkin sent each time player connects?)
 // TODO: replace checkin loop with checkin timer
 // TODO: server info provider should log sernum of most recent request from each ip address, use it for when they connect
 // TODO: handle player sending sernum info after connecting
