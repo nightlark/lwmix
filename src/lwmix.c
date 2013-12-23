@@ -21,6 +21,7 @@ serv_info server_info;
 int udp_sock = NULL;
 
 // revert DGRAM socket creation function and the two server loops to original now that checkin packet formed and sent correctly
+// -seems to already be done? or maybe just haven't committed most recent version yet
 // test encrypting ip address of connecting player
 // measure time taken to update player count on server list (update/checkin sent each time player connects?)
 // TODO: replace checkin loop with checkin timer
