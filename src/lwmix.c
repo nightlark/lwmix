@@ -18,12 +18,10 @@
 
 int running;
 serv_info server_info;
-int udp_sock = NULL;
 
-// revert DGRAM socket creation function and the two server loops to original now that checkin packet formed and sent correctly
-// -seems to already be done? or maybe just haven't committed most recent version yet
 // test encrypting ip address of connecting player
-// measure time taken to update player count on server list (update/checkin sent each time player connects?)
+// master server gets updated player count almost as soon as player connects or disconnects
+// -TODO: try checking if it is just the same checkin packet or not
 // TODO: replace checkin loop with checkin timer
 // TODO: server info provider should log sernum of most recent request from each ip address, use it for when they connect
 // TODO: handle player sending sernum info after connecting
@@ -111,10 +109,7 @@ void *masterCheckInTimer(void *arg)
     char buffer[1024];
     
     // Create UDP socket for checking in with the master server
-    //int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
-    int master_sock;
-    while (udp_sock == NULL);
-    master_sock = udp_sock;
+    int master_sock = createDGRAMSocket(server_info.master_ip, server_info.master_port, 0);
     
     if (server_info.public)
     {
@@ -165,7 +160,6 @@ void *serverInfoProvider(void *arg)
 	char buffer[1024];
 	int len;
 	int send_response;
-    udp_sock = info_sock;
 	
 	FD_SET(info_sock, &master);
 	fdmax = info_sock;
@@ -329,6 +323,7 @@ void *serverLoop(void *serv_config)
 						close(i);
 						FD_CLR(i, &master);
 					} else {
+                        // TODO: block packets starting with SR@
                         printf("Packet Received: %s\n", buffer);
                         if (strncmp(buffer, ":MIX", 4) == 0)
                         {
