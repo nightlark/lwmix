@@ -21,7 +21,7 @@ serv_info server_info;
 
 // test encrypting ip address of connecting player
 // master server gets updated player count almost as soon as player connects or disconnects
-// -TODO: try checking if it is just the same checkin packet or not
+// -uses same master checkin packet as before, except with Don't Fragment flag set (first one doesn't have it set)
 // TODO: replace checkin loop with checkin timer
 // TODO: server info provider should log sernum of most recent request from each ip address, use it for when they connect
 // TODO: handle player sending sernum info after connecting
